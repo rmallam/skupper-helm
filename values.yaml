@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: dtrqa.docker.service.anz/ddtb_omniservice/site-controller
+  repository: site-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "1.0.0-preview2"
@@ -38,7 +38,7 @@ service:
 
 ingress:
   enabled: true
-  host: apps-int.di1001.cpaas.test
+  host: apps-int.test
 
 resources: 
   limits:
@@ -64,17 +64,17 @@ affinity: {}
 skupper:
   router:
     image:
-      repository: dtrqa.docker.service.anz/ddtb_omniservice/skupper-router
+      repository: skupper-router
       pullPolicy: IfNotPresent
       tag: "2.0.0"
   configsync:
     image:
-      repository: dtrqa.docker.service.anz/ddtb_omniservice/config-sync
+      repository: config-sync
       pullPolicy: IfNotPresent
       tag: "1.0.0-preview2"   
   servicecontroller:
     image:
-      repository: dtrqa.docker.service.anz/ddtb_omniservice/service-controller
+      repository: service-controller
       pullPolicy: IfNotPresent
       tag: "1.0.0-preview2" 
 
@@ -83,6 +83,6 @@ sites: true
 Connectors:
   # - name: skupper-token-ddtb-registration-corp-dev1-qi1001
   #   host: skupper-inter-router-ddtb-jenkins-dev-di1001.apps-int.di1001.cpaas.test
-   - name: ddtb-jenkins-dev-di1001
-     host: skupper-inter-router-ddtb-jenkins-dev-di1001.apps-int.di1001.cpaas.test
+   - name: namespace1
+     host: skupper-inter-router-test.dev
 
