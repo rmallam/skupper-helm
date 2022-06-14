@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+kind: ConfigMap
+metadata:
+  name: skupper-vault
+data:
+  APPLICATION_SECRET_PATH: >-
+    skupper-key,skupper-pem
+  k8s_role_name: readrole
+

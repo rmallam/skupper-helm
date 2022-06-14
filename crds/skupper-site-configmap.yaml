@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skupper-site
+data:
+  controller-cpu: "250m"
+  controller-cpu-limit: "250m"
+  controller-memory: "256Mi"
+  controller-memory-limit: "256Mi"
+  ingress: "route"
+  ingress-host: "{{ .Values.ingress.host }}"
+  name: "{{ .Release.Namespace }}"
+  router-console: "false"
+  router-cpu: "250m"
+  router-cpu-limit: "250m"
+  router-memory: "256Mi"
+  router-memory-limit: "256Mi"
+  router-mode: "interior"
+  service-controller: "true"
+  service-sync: "true"

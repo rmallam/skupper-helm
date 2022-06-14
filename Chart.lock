@@ -1,0 +1,6 @@
+dependencies:
+- name: skupper-site
+  repository: file://dependency-chart/skupper-site
+  version: 0.1.0
+digest: sha256:0b704133aa65d9e921015a611297ba09e76328f16b0c516527288c7502df0d5f
+generated: "2022-06-01T11:25:01.616368+10:00"

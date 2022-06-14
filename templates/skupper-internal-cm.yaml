@@ -1,0 +1,147 @@
+{{- $siteuid := (lookup "v1" "ConfigMap" .Release.Namespace "skupper-site").metadata.uid }}
+{{- $sitename := (lookup "v1" "ConfigMap" .Release.Namespace "skupper-site").data.name }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skupper-internal
+data:
+  skrouterd.json: |-
+    [
+        [
+            "router",
+            {
+                "id": "{{ $sitename }}-${HOSTNAME}",
+                "mode": "interior",
+                "helloMaxAgeSeconds": "3",
+                "metadata": "{\"id\":\"{{ $siteuid }}\",\"version\":\"{{ .Values.image.tag }}\"}"
+            }
+        ],
+        [
+            "sslProfile",
+            {
+                "name": "skupper-service-client",
+                "caCertFile": "/etc/skupper-router-certs/skupper-service-client/ca.crt"
+            }
+        ],
+        [
+            "sslProfile",
+            {
+                "name": "skupper-internal",
+                "certFile": "/etc/skupper-router-certs/skupper-internal/tls.crt",
+                "privateKeyFile": "/etc/skupper-router-certs/skupper-internal/tls.key",
+                "caCertFile": "/etc/skupper-router-certs/skupper-internal/ca.crt"
+            }
+        ],
+        [
+            "sslProfile",
+            {
+                "name": "skupper-amqps",
+                "certFile": "/etc/skupper-router-certs/skupper-amqps/tls.crt",
+                "privateKeyFile": "/etc/skupper-router-certs/skupper-amqps/tls.key",
+                "caCertFile": "/etc/skupper-router-certs/skupper-amqps/ca.crt"
+            }
+        ],
+
+{{- range .Values.Connectors -}}
+{{- $connectorname := printf "%s" .name }}
+{{- $connectorhost := printf "%s" .host }}
+        [
+            "connector",
+            {
+                "name": "{{ $connectorname }}",
+                "role": "inter-router",
+                "host": "{{ $connectorhost }}",
+                "port": "443",
+                "sslProfile": "{{ $connectorname }}-profile",
+                "maxFrameSize": 16384,
+                "maxSessionFrames": 640
+            }
+        ],
+        [
+            "sslProfile",
+            {
+                "name": "{{ $connectorname }}-profile",
+                "certFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/tls.crt",
+                "privateKeyFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/tls.key",
+                "caCertFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/ca.crt"
+            }
+        ],
+{{- end -}}
+
+        [
+            "listener",
+            {
+                "name": "@9090",
+                "role": "normal",
+                "port": 9090,
+                "http": true,
+                "httpRootDir": "disabled",
+                "healthz": true,
+                "metrics": true
+            }
+        ],
+        [
+            "listener",
+            {
+                "name": "amqp",
+                "host": "localhost",
+                "port": 5672
+            }
+        ],
+        [
+            "listener",
+            {
+                "name": "amqps",
+                "port": 5671,
+                "sslProfile": "skupper-amqps",
+                "saslMechanisms": "EXTERNAL",
+                "authenticatePeer": true
+            }
+        ],
+        [
+            "listener",
+            {
+                "name": "interior-listener",
+                "role": "inter-router",
+                "port": 55671,
+                "sslProfile": "skupper-internal",
+                "saslMechanisms": "EXTERNAL",
+                "authenticatePeer": true,
+                "maxFrameSize": 16384,
+                "maxSessionFrames": 640
+            }
+        ],
+        [
+            "listener",
+            {
+                "name": "edge-listener",
+                "role": "edge",
+                "port": 45671,
+                "sslProfile": "skupper-internal",
+                "saslMechanisms": "EXTERNAL",
+                "authenticatePeer": true,
+                "maxFrameSize": 16384,
+                "maxSessionFrames": 640
+            }
+        ],
+        [
+            "address",
+            {
+                "prefix": "mc",
+                "distribution": "multicast"
+            }
+        ]
+    ]
+  connect.json: |-
+    {
+    "scheme": "amqps",
+    "host": "skupper-router-local.{{ .Release.Namespace }}.svc.cluster.local",
+    "port": "5671",
+    "tls": {
+        "ca": "/etc/messaging/ca.crt",
+        "cert": "/etc/messaging/tls.crt",
+        "key": "/etc/messaging/tls.key",
+        "verify": true
+    }
+
+

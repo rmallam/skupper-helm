@@ -1,0 +1,181 @@
+{{- $siteuid := (lookup "v1" "ConfigMap" .Release.Namespace "skupper-site").metadata.uid }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skupper-router
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      skupper.io/component: router
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "9090"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/name: skupper-router
+        app.kubernetes.io/part-of: skupper
+        application: skupper-router
+        skupper.io/component: router
+    spec:
+    spec:
+      initContainers:
+      - args:
+          - sh
+          - '-c'
+          - /bin/bash /app/inject-secrets.sh && cp /injected-secrets/service-ca.crt /injected-secrets/ca.crt && cp /injected-secrets/skupper.crt /injected-secrets/tls.crt && cp /injected-secrets/skupper.key /injected-secrets/tls.key
+        envFrom:
+          - configMapRef:
+              name: vault-config
+          - configMapRef:
+              name: skupper-vault
+        image: 'vault-init:latest'
+        imagePullPolicy: Always
+        name: init-vault
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        securityContext:
+          capabilities:
+            drop:
+              - KILL
+              - MKNOD
+              - SYS_CHROOT
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /app/inject-secrets.sh
+            name: inject-secrets
+            subPath: inject-secrets.sh
+          - mountPath: /injected-secrets
+            name: secret-vol
+          - mountPath: /injected-secrets/service-ca.crt
+            name: cacert
+            subPath: service-ca.crt
+      containers:
+      - env:
+        - name: APPLICATION_NAME
+          value: skupper-router
+        - name: POD_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: QDROUTERD_AUTO_MESH_DISCOVERY
+          value: QUERY
+        - name: QDROUTERD_CONF
+          value: /etc/skupper-router/config/skrouterd.json
+        - name: QDROUTERD_CONF_TYPE
+          value: json
+        - name: SKUPPER_SITE_ID
+          value: {{ $siteuid }}
+        image: skupper-router:2.0.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: router
+        ports:
+        - containerPort: 5671
+          name: amqps
+          protocol: TCP
+        - containerPort: 9090
+          name: http
+          protocol: TCP
+        - containerPort: 55671
+          name: inter-router
+          protocol: TCP
+        - containerPort: 45671
+          name: edge
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 50m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 256Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        # - mountPath: /etc/skupper-router-certs/skupper-amqps/
+        #   name: skupper-local-server
+          - mountPath: /etc/skupper-router/config/
+            name: router-config
+        # - mountPath: /etc/skupper-router-certs/skupper-internal/
+        #   name: skupper-site-server
+        # - mountPath: /etc/skupper-router-certs
+        #   name: skupper-router-certs
+          - mountPath: /etc/skupper-router-certs/skupper-internal/
+            name: secret-vol
+          - mountPath: /etc/skupper-router-certs/skupper-amqps/
+            name: secret-vol
+          - mountPath: /etc/skupper-router-certs/skupper-service-client/
+            name: secret-vol
+          - mountPath: /etc/skupper-router-certs/ddtb-jenkins-dev-di1001-profile/
+            name: secret-vol       
+      - image: config-sync:1.0.2-fqdn
+        imagePullPolicy: Always
+        name: config-sync
+        resources:
+          limits:
+            cpu: 50m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 256Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/skupper-router-certs
+          name: skupper-router-certs
+      restartPolicy: Always
+      serviceAccount: skupper-router
+      serviceAccountName: skupper-router
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: skupper-local-server
+        secret:
+          defaultMode: 420
+          secretName: skupper-local-server
+      - configMap:
+          defaultMode: 420
+          name: skupper-internal
+        name: router-config
+      - name: skupper-site-server
+        secret:
+          defaultMode: 420
+          secretName: skupper-site-server
+      - emptyDir: {}
+        name: skupper-router-certs
+      - name: inject-secrets
+        configMap:
+          name: inject-secrets
+          defaultMode: 493
+      - name: cacert
+        configMap:
+          name: openshift-service-ca.crt
+      - name: secret-vol
+        emptyDir:
+          medium: Memory

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skupper-skupper-site-controller
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: skupper
+      app.kubernetes.io/name: skupper-site-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: skupper
+        app.kubernetes.io/name: skupper-site-controller
+        app.kubernetes.io/part-of: skupper
+        application: skupper-site-controller
+    spec:
+      containers:
+      - env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: QDROUTERD_IMAGE
+          value: skupper-router:2.0.0
+        - name: SKUPPER_SERVICE_CONTROLLER_IMAGE
+          value: service-controller:1.0.2-fqdn
+        - name: SKUPPER_CONFIG_SYNC_IMAGE
+          value: config-sync:1.0.2-fqdn
+        image: site-controller:1.0.2-fqdn
+        imagePullPolicy: IfNotPresent
+        name: skupper-site-controller
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      serviceAccount: skupper-site-controller
+      serviceAccountName: skupper-site-controller
+      terminationGracePeriodSeconds: 30
