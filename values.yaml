@@ -1,0 +1,88 @@
+# Default values for skupper-site-controller.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: site-controller
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.0.0-preview2"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "skupper-site-controller"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: apps-int.test
+
+resources: 
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+skupper:
+  router:
+    image:
+      repository: skupper-router
+      pullPolicy: IfNotPresent
+      tag: "2.0.0"
+  configsync:
+    image:
+      repository: config-sync
+      pullPolicy: IfNotPresent
+      tag: "1.0.0-preview2"   
+  servicecontroller:
+    image:
+      repository: service-controller
+      pullPolicy: IfNotPresent
+      tag: "1.0.0-preview2" 
+
+sites: true
+
+Connectors:
+  # - name: skupper-token-ddtb-registration-corp-dev1-qi1001
+  #   host: skupper-inter-router-ddtb-jenkins-dev-di1001.apps-int.di1001.cpaas.test
+   - name: namespace1
+     host: skupper-inter-router-test.dev
+

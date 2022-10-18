@@ -153,7 +153,7 @@ spec:
           defaultMode: 493
       - name: cacert
         configMap:
-          name: anzglobaltestca
+          name: ca
       - name: secret-vol
         emptyDir:
           medium: Memory
