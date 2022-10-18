@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skupper-site
+data:
+  name: "{{ .Release.Namespace }}"
+  controller-cpu: "{{ .Values.servicecontroller.cpu.request }}"
+  controller-cpu-limit: "{{ .Values.servicecontroller.cpu.limit }}"
+  controller-memory: "{{ .Values.servicecontroller.memory.request }}"
+  controller-memory-limit: "{{ .Values.servicecontroller.memory.limit }}"
+  ingress: "{{ .Values.router.ingressType }}"
+  router-console: "{{ .Values.router.consoleEnabled }}"
+  router-cpu: "{{ .Values.router.cpu.request }}"
+  router-cpu-limit: "{{ .Values.router.cpu.limit }}"
+  router-memory: "{{ .Values.router.memory.request }}"
+  router-memory-limit: "{{ .Values.router.memory.limit }}"
+  router-mode: "{{ .Values.router.mode }}"
+  service-controller: "{{ .Values.servicecontroller.enabled }}"
+  service-sync: "{{ .Values.servicecontroller.serviceSync }}"

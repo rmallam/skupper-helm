@@ -1,0 +1,21 @@
+servicecontroller:
+  cpu:
+    request: "250m"
+    limit: "250m"
+  memory:
+    request: "256Mi"
+    limit: "256Mi"
+  enabled: true # service-controller: "true"
+  serviceSync: "true"  
+
+router:
+  ingressType: "route"
+  consoleEnabled: "false"
+  cpu:
+    request: "250m"
+    limit: "250m"
+  memory: 
+    request: "256Mi"
+    limit: "256Mi"
+  mode: "interior"
+

@@ -42,17 +42,17 @@ data:
             }
         ],
 
-{{- range .Values.Connectors -}}
-{{- $connectorname := printf "%s" .name }}
-{{- $connectorhost := printf "%s" .host }}
-        [
+        {{- range .Values.remoteSites -}}
+        {{- $remotesitename := printf "%s" .name }}
+        {{- $remotesitehost := printf "%s" .host }}
+                [
             "connector",
             {
-                "name": "{{ $connectorname }}",
+                "name": "{{ $remotesitename }}",
                 "role": "inter-router",
-                "host": "{{ $connectorhost }}",
+                "host": "{{ $remotesitehost }}",
                 "port": "443",
-                "sslProfile": "{{ $connectorname }}-profile",
+                "sslProfile": "{{ $remotesitename }}-profile",
                 "maxFrameSize": 16384,
                 "maxSessionFrames": 640
             }
@@ -60,13 +60,13 @@ data:
         [
             "sslProfile",
             {
-                "name": "{{ $connectorname }}-profile",
-                "certFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/tls.crt",
-                "privateKeyFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/tls.key",
-                "caCertFile": "/etc/skupper-router-certs/{{ $connectorname }}-profile/ca.crt"
+                "name": "{{ $remotesitename }}-profile",
+                "certFile": "/etc/skupper-router-certs/{{ $remotesitename }}-profile/tls.crt",
+                "privateKeyFile": "/etc/skupper-router-certs/{{ $remotesitename }}-profile/tls.key",
+                "caCertFile": "/etc/skupper-router-certs/{{ $remotesitename }}-profile/ca.crt"
             }
         ],
-{{- end -}}
+        {{- end -}}
 
         [
             "listener",
@@ -132,16 +132,3 @@ data:
             }
         ]
     ]
-  connect.json: |-
-    {
-    "scheme": "amqps",
-    "host": "skupper-router-local.{{ .Release.Namespace }}.svc.cluster.local",
-    "port": "5671",
-    "tls": {
-        "ca": "/etc/messaging/ca.crt",
-        "cert": "/etc/messaging/tls.crt",
-        "key": "/etc/messaging/tls.key",
-        "verify": true
-    }
-
-

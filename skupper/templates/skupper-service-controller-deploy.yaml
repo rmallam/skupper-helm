@@ -26,7 +26,7 @@ spec:
       - args:
           - sh
           - '-c'
-          - /bin/bash /app/inject-secrets.sh && cp /injected-secrets/service-ca.crt /injected-secrets/ca.crt && cp /injected-secrets/skupper.crt /injected-secrets/tls.crt && cp /injected-secrets/skupper.key /injected-secrets/tls.key
+          - /bin/bash /app/inject-secrets.sh && cp /injected-secrets/service-ca.crt /injected-secrets/ca.crt
         envFrom:
           - configMapRef:
               name: vault-config
@@ -74,28 +74,19 @@ spec:
         - name: OWNER_NAME
           value: skupper-router
         - name: QDROUTERD_IMAGE
-          value: skupper-router:2.0.0
+          value: {{ .Values.skupper.router.image.repository }}:{{ .Values.skupper.router.image.tag }}
         - name: METRICS_USERS
           value: /etc/console-users
-        image: service-controller:1.0.2-fqdn
+        image: {{ .Values.skupper.servicecontroller.image.repository }}:{{ .Values.skupper.servicecontroller.image.tag }}
         imagePullPolicy: Always
         name: service-controller
         resources:
-          limits:
-            cpu: 250m
-            memory: 256Mi
-          requests:
-            cpu: 250m
-            memory: 256Mi
+{{ toYaml .Values.skupper.servicecontroller.resources | indent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/console-users/
-          name: skupper-console-users
-        # - mountPath: /etc/service-controller/certs/
-        #   name: skupper-claims-server
-        # - mountPath: /etc/service-controller/console/
-        #   name: skupper-console-certs
+        # - mountPath: /etc/console-users/
+        #   name: skupper-console-users
         - mountPath: /etc/messaging/connect.json
           name: connectjson
           subPath: connect.json
@@ -113,29 +104,21 @@ spec:
       serviceAccountName: skupper-service-controller
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: skupper-console-users
-        secret:
-          defaultMode: 420
-          secretName: skupper-console-users
-      - name: skupper-claims-server
-        secret:
-          defaultMode: 420
-          secretName: skupper-claims-server
-      - name: skupper-console-certs
-        secret:
-          defaultMode: 420
-          secretName: skupper-console-certs
+      # - name: skupper-console-users
+      #   secret:
+      #     defaultMode: 420
+      #     secretName: skupper-console-users
       - name: connectjson
         configMap:
           defaultMode: 420
-          name: skupper-internal
+          name: skupper-connectjson
       - name: inject-secrets
         configMap:
           name: inject-secrets
           defaultMode: 493
       - name: cacert
         configMap:
-          name: openshift-service-ca.crt
+          name: anzglobaltestca
       - name: secret-vol
         emptyDir:
           medium: Memory

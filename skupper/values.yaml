@@ -1,0 +1,99 @@
+# Default values for skupper-site-controller.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+tribe: local  # this should match the namespace so that the right certs are pulled
+
+
+image:
+  repository: quay.io/skupper/site-controller
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.1.1"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "skupper-site-controller"
+
+ingress:
+  enabled: true
+  host: newname
+  domain: test.com
+
+resources: 
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+skupper:
+  router:
+    image:
+      repository: quay.io/skupper/skupper-router
+      pullPolicy: IfNotPresent
+      tag: "2.1.0"
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  configsync:
+    image:
+      repository: quay.io/skupper/config-sync
+      pullPolicy: IfNotPresent
+      tag: "1.1.1"   
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  servicecontroller:
+    image:
+      repository: quay.io/skupper/service-controller
+      pullPolicy: IfNotPresent
+      tag: "1.1.1" 
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  siteController:
+    image:
+      repository: quay.io/skupper/site-controller
+      pullPolicy: IfNotPresent
+      tag: "1.1.1" 
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+sites: true
+
+
+# Connectors 
+# if you need to link this site to any other skupper site, add the details below. Name of the other skupper site and the inter-router route URL
+
+remoteSites:
+    - name: testnamespace
+      host: skupper-inter-router.test.test.com

@@ -5,6 +5,6 @@ metadata:
   name: skupper-vault
 data:
   APPLICATION_SECRET_PATH: >-
-    skupper-key,skupper-pem
-  k8s_role_name: readrole
-
+    /skupper/certificates
+  # k8s_role_name: k8s-smp-omniservice-read
+  k8s_role_name: test
