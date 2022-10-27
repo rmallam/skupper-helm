@@ -1,5 +1,11 @@
+{{- $siteuid := (lookup "v1" "ConfigMap" .Release.Namespace "skupper-site").metadata.uid }}
 apiVersion: v1
 data:
 kind: ConfigMap
 metadata:
   name: skupper-services
+  ownerReferences:
+  - apiVersion: v1
+    kind: ConfigMap
+    name: skupper-site
+    uid: {{ $siteuid }}

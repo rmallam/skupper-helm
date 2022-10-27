@@ -6,5 +6,5 @@ metadata:
 data:
   APPLICATION_SECRET_PATH: >-
     /skupper/certificates
-  # k8s_role_name: k8s-smp-omniservice-read
+  # k8s_role_name: test
   k8s_role_name: test

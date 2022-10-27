@@ -3,9 +3,14 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: skupper-router
+  ownerReferences:
+  - apiVersion: v1
+    kind: ConfigMap
+    name: skupper-site
+    uid: {{ $siteuid }}
 spec:
   progressDeadlineSeconds: 600
-  replicas: 1
+  replicas: {{ .Values.skupper.router.replicaCount }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -36,16 +41,11 @@ spec:
               name: vault-config
           - configMapRef:
               name: skupper-vault
-        image: 'vault-init:latest'
+        image: {{ .Values.vault.image.repository }}:{{ .Values.vault.image.tag }}
         imagePullPolicy: Always
         name: init-vault
         resources:
-          limits:
-            cpu: 100m
-            memory: 100Mi
-          requests:
-            cpu: 50m
-            memory: 50Mi
+{{ toYaml .Values.vault.resources | indent 10 }}
         securityContext:
           capabilities:
             drop:

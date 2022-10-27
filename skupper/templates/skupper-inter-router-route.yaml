@@ -3,7 +3,9 @@ kind: Route
 metadata:
   name: skupper-inter-router
 spec:
-  #host: {{ .Values.ingress.host }}.{{ .Values.ingress.domain }}
+{{- if .Values.customhostname }}
+  host: {{ .Values.ingress.host }}.{{ .Values.ingress.domain }}
+{{- end }}
   port:
     targetPort: inter-router
   tls:

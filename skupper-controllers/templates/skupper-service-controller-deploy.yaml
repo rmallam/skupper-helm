@@ -1,0 +1,127 @@
+{{- $siteuid := (lookup "v1" "ConfigMap" .Release.Namespace "skupper-site").metadata.uid }}
+{{- $routeruid := (lookup "apps/v1" "Deployment" .Release.Namespace "skupper-router").metadata.uid }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skupper-service-controller
+  ownerReferences:
+  - apiVersion: v1
+    kind: ConfigMap
+    name: skupper-site
+    uid: {{ $siteuid }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{ .Values.skupper.servicecontroller.replicaCount }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      skupper.io/component: service-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: skupper-service-controller
+        app.kubernetes.io/part-of: skupper
+        skupper.io/component: service-controller
+    spec:
+      initContainers:
+      - args:
+          - sh
+          - '-c'
+          - /bin/bash /app/inject-secrets.sh && cp /injected-secrets/service-ca.crt /injected-secrets/ca.crt
+        envFrom:
+          - configMapRef:
+              name: vault-config
+          - configMapRef:
+              name: skupper-vault
+        image: {{ .Values.vault.image.repository }}:{{ .Values.vault.image.tag }}
+        imagePullPolicy: Always
+        name: init-vault
+        resources:
+{{ toYaml .Values.vault.resources | indent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+              - KILL
+              - MKNOD
+              - SYS_CHROOT
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /app/inject-secrets.sh
+            name: inject-secrets
+            subPath: inject-secrets.sh
+          - mountPath: /injected-secrets
+            name: secret-vol
+          - mountPath: /injected-secrets/service-ca.crt
+            name: cacert
+            subPath: service-ca.crt
+      containers:
+      - env:
+        - name: SKUPPER_NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: SKUPPER_SITE_NAME
+          value: {{ .Release.Namespace }}
+        - name: SKUPPER_SITE_ID
+          value: {{ $siteuid }}
+        - name: SKUPPER_SERVICE_ACCOUNT
+          value: skupper-router
+        - name: SKUPPER_ROUTER_MODE
+          value: interior
+        - name: OWNER_NAME
+          value: skupper-router
+        - name: OWNER_UID
+          value: {{ $routeruid }}
+        - name: QDROUTERD_IMAGE
+          value: {{ .Values.skupper.router.image.repository }}:{{ .Values.skupper.router.image.tag }}
+        - name: METRICS_USERS
+          value: /etc/console-users
+        image: {{ .Values.skupper.servicecontroller.image.repository }}:{{ .Values.skupper.servicecontroller.image.tag }}
+        imagePullPolicy: Always
+        name: service-controller
+        resources:
+{{ toYaml .Values.skupper.servicecontroller.resources | indent 10 }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        # - mountPath: /etc/console-users/
+        #   name: skupper-console-users
+        - mountPath: /etc/messaging/connect.json
+          name: connectjson
+          subPath: connect.json
+        - mountPath: /etc/messaging/
+          name: secret-vol
+        - mountPath: /etc/service-controller/certs/
+          name: secret-vol
+        - mountPath: /etc/service-controller/console/
+          name: secret-vol
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: skupper-service-controller
+      serviceAccountName: skupper-service-controller
+      terminationGracePeriodSeconds: 30
+      volumes:
+      # - name: skupper-console-users
+      #   secret:
+      #     defaultMode: 420
+      #     secretName: skupper-console-users
+      - name: connectjson
+        configMap:
+          defaultMode: 420
+          name: skupper-connectjson
+      - name: inject-secrets
+        configMap:
+          name: inject-secrets
+          defaultMode: 493
+      - name: cacert
+        configMap:
+          name: ca
+      - name: secret-vol
+        emptyDir:
+          medium: Memory

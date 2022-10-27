@@ -18,4 +18,3 @@ router:
     request: "256Mi"
     limit: "256Mi"
   mode: "interior"
-

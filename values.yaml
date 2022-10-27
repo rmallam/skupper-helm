@@ -2,51 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-
-image:
-  repository: site-controller
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.0.0-preview2"
-
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
-serviceAccount:
-  create: true
-  annotations: {}
-  name: "skupper-site-controller"
-
-podAnnotations: {}
-
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
-
+customhostname: false "use when a custom route is required for skupper-inter-router"
 ingress:
   enabled: true
-  host: apps-int.test
+  host: skupper-inter-router-custom
+  domain: test.com 
+  #exmaple: if customhostname is enabled, interrouter route url will be skupper-inter-router-custom.test.com
 
-resources: 
-  limits:
-    cpu: 100m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
 
 autoscaling:
   enabled: false
@@ -61,28 +23,67 @@ tolerations: []
 
 affinity: {}
 
+vault:
+  image:
+  repository: vault
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
 skupper:
   router:
     image:
-      repository: skupper-router
+      repository: quay.io/skupper/skupper-router
       pullPolicy: IfNotPresent
-      tag: "2.0.0"
+      tag: "2.1.0"
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    replicaCount: 1
   configsync:
     image:
-      repository: config-sync
+      repository: quay.io/skupper/config-sync
       pullPolicy: IfNotPresent
-      tag: "1.0.0-preview2"   
+      tag: "1.1.1"   
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
   servicecontroller:
     image:
-      repository: service-controller
+      repository: quay.io/skupper/service-controller
       pullPolicy: IfNotPresent
-      tag: "1.0.0-preview2" 
+      tag: "1.1.1" 
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    replicaCount: 1
+  sitecontroller:
+    image:
+      repository: quay.io/skupper/site-controller
+      pullPolicy: IfNotPresent
+      tag: "1.1.1" 
+    resources: 
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    replicaCount: 1
 
-sites: true
-
-Connectors:
-  # - name: skupper-token-ddtb-registration-corp-dev1-qi1001
-  #   host: skupper-inter-router-ddtb-jenkins-dev-di1001.apps-int.di1001.cpaas.test
+#if you have other sites to connect to, add them here in a list, name will be the namepsace of the other site and host will be the skupper interrouter url of other site
+remoteSites:
    - name: namespace1
      host: skupper-inter-router-test.dev
 
