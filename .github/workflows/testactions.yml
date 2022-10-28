@@ -1,0 +1,64 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+        
+      - name: Helm tool installer
+        uses: Azure/setup-helm@v3
+        
+      - name: Helm version check
+        run: helm version
+        
+      - name: OpenShift Client Installer
+      # You may pin to the exact commit or the version.
+      # uses: redhat-actions/oc-installer@a129dec08aa1cd54ee1e0ac0ebcfbf7b12720582
+        uses: redhat-actions/oc-installer@v1
+      
+      - name: OpenShift Login
+        # You may pin to the exact commit or the version.
+        # uses: redhat-actions/oc-login@11b98b2a0c4b972c9791d58edbf378ce0f060359
+        uses: redhat-actions/oc-login@v1.1
+        with:
+          # Openshift Server URL.
+          openshift_server_url: https://c100-e.au-syd.containers.cloud.ibm.com:32382
+          # Openshift Bearer Token. Store in a secret.
+          openshift_token: ${{ secrets.IBM_CLUSTER_LOGIN }}
+      
+      - name: install vault
+        run: |
+            helm repo add hashicorp https://helm.releases.hashicorp.com
+            helm repo update
+            helm install vault hashicorp/vault \
+            --set "global.openshift=true" \
+            --set "server.dev.enabled=true"
+            oc get pods
+            oc exec vault-0 -- /bin/sh; vault auth enable kubernetes;vault write auth/kubernetes/config \
+            kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443"
+        
+     
