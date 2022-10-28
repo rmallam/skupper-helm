@@ -28,4 +28,8 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: echo Hello, world!
-
+        
+      - name: YAML Lint Action
+        # You may pin to the exact commit or the version.
+        # uses: actionshub/yamllint@342326067972e646d78bcdbb3d55974f3dcf0250
+        uses: actionshub/yamllint@1.0.2
